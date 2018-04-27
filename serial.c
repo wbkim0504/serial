@@ -1,54 +1,85 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <signal.h>
+#include <unistd.h>
  
 #include <wiringPi.h>
 #include <wiringSerial.h>
  
 #define BAUDRATE	(115200)
 
+int serial_fd;
+
+int init_uart()
+{
+	int fd;
+	int count ;
+	unsigned int nextTime ;
+
+	fd = serialOpen ("/dev/ttyAMA0", BAUDRATE);
+	if (fd < 0) 
+	{
+		fprintf (stderr, "Unable to open serial device: %s\n", strerror (errno));
+		return -1 ;
+	}
+
+	if (wiringPiSetup () == -1)
+	{
+		fprintf (stdout, "Unable to start wiringPi: %s\n", strerror (errno)) ;
+		return -1 ;
+	}
+	return fd;
+}
+
+#define buff_size	(256)
+
+void timer_10ms(int sig_num)
+{
+	if (sig_num == SIGALRM)
+	{
+		int ndata;
+
+		ndata = serialDataAvail (serial_fd);
+		if (ndata > 0)
+		{
+			int i;
+			char buff[buff_size];
+
+			if (ndata > (buff_size-1)
+				ndata = buff_size - 1;
+
+			for (int i=0; i<ndata; i++)
+			{
+				buff[i] = serialGetchar(serial_fd); 
+			}
+		}	
+	}
+}
+
+
 int main ()
 {
-  int fd ;
-  int count ;
-  unsigned int nextTime ;
- 
-  fd = serialOpen ("/dev/ttyAMA0", BAUDRATE));
-  if (fd < 0) 
-  {
-    fprintf (stderr, "Unable to open serial device: %s\n", strerror (errno)) ;                   
-    return 1 ;
-  }
- 
-  if (wiringPiSetup () == -1)
-  {
-    fprintf (stdout, "Unable to start wiringPi: %s\n", strerror (errno)) ;
-    return 1 ;
-  }
- 
-  nextTime = millis () + 300 ;
- 
-  for (count = 0 ; count < 256 ; )
-  {
-    if (millis () > nextTime)
-    {
-      printf ("\nOut: %d: ", count) ;
-      fflush (stdout) ;
-      serialPutchar (fd, count) ;
-      nextTime += 300 ;
-      ++count ;
-    }
- 
-    delay (3) ;
- 
-    while (serialDataAvail (fd))
-    {
-      printf (" -> %3d", serialGetchar (fd)) ;
-      fflush (stdout) ;
-    }
-  }
- 
-  printf ("\n") ;
-  return 0 ;
+	if (serial_fd = init_uart())
+		return 1;
+
+	signal(SIGALRM, timer_10ms);
+	ualarm(10000,10000);
+	
+	while(1)
+	{
+		char buff[256];
+
+		fgets(buff, 256, stdin);
+		if (buff[0] == '\0')
+		{
+			break;
+		}
+		else
+		{
+			serialPuts(serial_fd, buff);
+		}
+	}
+	return 0 ;
 }
 
