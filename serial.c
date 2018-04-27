@@ -46,13 +46,16 @@ void timer_10ms(int sig_num)
 			int i;
 			char buff[buff_size];
 
-			if (ndata > (buff_size-1)
+			fprintf(stdout, "ndata = %d \n", ndata);
+			if (ndata > (buff_size-1))
 				ndata = buff_size - 1;
 
 			for (int i=0; i<ndata; i++)
 			{
 				buff[i] = serialGetchar(serial_fd); 
 			}
+			buff[ndata] = '\0';
+			fprintf(stdout, "RX -> %s", buff);
 		}	
 	}
 }
@@ -60,18 +63,22 @@ void timer_10ms(int sig_num)
 
 int main ()
 {
-	if (serial_fd = init_uart())
+	if (serial_fd = init_uart()< 0)
+	{
+		fprintf (stdout, "Unable to init uart device \n");
+		fflush(stdout);
 		return 1;
+	}
 
-	signal(SIGALRM, timer_10ms);
-	ualarm(10000,10000);
+	//signal(SIGALRM, timer_10ms);
+	//ualarm(10000,10000);
 	
 	while(1)
 	{
 		char buff[256];
 
 		fgets(buff, 256, stdin);
-		if (buff[0] == '\0')
+		if (buff[0] == '\n')
 		{
 			break;
 		}
