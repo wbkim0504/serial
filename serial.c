@@ -11,6 +11,7 @@
 #define buff_size	(256)
 
 int fd_uart;
+int timer_count = 0;
 
 void check_rx(int fd)
 {
@@ -22,7 +23,7 @@ void check_rx(int fd)
 		int i;
 		char buff[buff_size];
 
-		fprintf(stdout, "ndata = %d \n", ndata);
+		//fprintf(stdout, "ndata = %d \n", ndata);
 		if (ndata > (buff_size-1))
 			ndata = buff_size - 1;
 
@@ -36,11 +37,21 @@ void check_rx(int fd)
 }
 
 
+void timer_100ms()
+{
+	check_rx(fd_uart);
+}
+
 void timer_10ms(int sig_num)
 {
 	if (sig_num == SIGALRM)
 	{
-		check_rx(fd_uart);
+		timer_count++;
+		if (timer_count >= 10)
+		{
+			timer_count = 0;
+			timer_100ms();
+		}
 	}
 }
 
